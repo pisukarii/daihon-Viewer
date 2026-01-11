@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>SCRIPT VIEWER V1</title>
+    <title>SCRIPT VIEWER -FINAL ADJUST-</title>
     <style>
         :root {
             --bg-color: #000000;
@@ -23,9 +23,11 @@
 
         .container { display: flex; height: 100vh; width: 100vw; overflow: hidden; }
 
+        /* PDFエリア */
         #viewer-area { flex-grow: 1; height: 100%; background: #000; position: relative; }
         iframe { width: 100%; height: 100%; border: none; }
 
+        /* サイドパネル */
         #sidebar {
             width: 350px; min-width: 350px;
             background: var(--panel-color);
@@ -34,61 +36,58 @@
             transition: margin-right 0.3s ease;
             position: relative;
         }
-
         #sidebar.hidden { margin-right: -350px; }
 
-        #side-clock {
-            padding: 15px 20px; font-size: 2.2rem; font-weight: 800;
-            text-align: right; border-bottom: 2px solid var(--border-color);
-            background: #000; letter-spacing: -1px;
+        /* ヘッダーエリア（時計とボタンの並び） */
+        #side-header {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end; /* 右寄せ */
+            background: #000;
+            border-bottom: 2px solid var(--border-color);
+            height: 70px; /* 高さを固定 */
+            padding: 0 10px;
         }
 
+        /* 時計：ボタンの左側に配置 */
+        #side-clock {
+            font-size: 2.2rem; font-weight: 800;
+            letter-spacing: -1px;
+            margin-right: 15px; /* ボタンとの距離 */
+        }
+
+        /* 開閉ボタン：最右端 */
         #toggle-panel {
-            position: fixed; top: 10px; right: 10px;
             width: 50px; height: 50px;
-            background: rgba(0,0,0,0.8); color: #fff;
+            background: #222; color: #fff;
             border: 1px solid var(--border-color);
-            font-size: 1.5rem; cursor: pointer; z-index: 100;
+            font-size: 1.5rem; cursor: pointer;
             display: flex; align-items: center; justify-content: center;
         }
 
+        /* リストUI */
         #list-container { flex-grow: 1; overflow-y: auto; }
-        
         .group-header {
             background: #222; padding: 12px; display: flex; cursor: pointer;
             font-weight: bold; font-size: 0.8rem; border-bottom: 1px solid #333;
-            text-transform: uppercase; letter-spacing: 1px;
+            text-transform: uppercase;
         }
-
         .file-list { min-height: 20px; padding: 2px 0; background: #000; }
-
         .file-item {
             background: #000; margin-bottom: 2px; padding: 12px;
-            border: 1px solid var(--border-color); 
-            display: flex; align-items: center; cursor: grab;
+            border: 1px solid var(--border-color); display: flex; align-items: center;
         }
         .file-item.active { border: 1px solid var(--accent-color); background: #1a1a1a; }
-        .file-name { 
-            flex-grow: 1; font-size: 0.9rem; font-weight: 900; 
-            overflow: hidden; text-overflow: ellipsis; white-space: nowrap; 
-        }
-        
-        .item-controls { display: flex; gap: 5px; margin-left: 10px; }
-        .mini-btn { 
-            background: #000; border: 1px solid #444; color: #fff; 
-            padding: 8px 5px; cursor: pointer; font-size: 0.7rem; 
-            min-width: 30px; text-align: center; font-weight: bold;
-        }
+        .file-name { flex-grow: 1; font-size: 0.9rem; font-weight: 900; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .mini-btn { background: #000; border: 1px solid #444; color: #fff; padding: 8px 5px; cursor: pointer; font-size: 0.7rem; min-width: 30px; text-align: center; font-weight: bold; }
 
+        /* 下部コントロール */
         .controls { padding: 15px; background: #000; border-top: 1px solid var(--border-color); }
-        .btn { 
-            display: block; width: 100%; padding: 15px; margin-bottom: 8px; 
-            border: 1px solid var(--accent-color); background: #000; color: #fff; 
-            cursor: pointer; font-size: 0.9rem; font-weight: 900; text-align: center;
-        }
+        .btn { display: block; width: 100%; padding: 15px; margin-bottom: 8px; border: 1px solid var(--accent-color); background: #000; color: #fff; cursor: pointer; font-size: 0.9rem; font-weight: 900; text-align: center; }
         .btn-small { padding: 8px; font-size: 0.7rem; border-color: #666; color: #aaa; }
         .btn-lock { background: #300; border-color: #f00; color: #f66; padding: 18px; }
 
+        /* ロック・モーダル */
         #lock-screen { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 10000; flex-direction: column; justify-content: center; align-items: center; text-align: center; }
         #lock-clock { font-size: 12rem; font-weight: 900; color: #fff; letter-spacing: -5px; }
         .modal { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #000; padding: 25px; border: 2px solid var(--accent-color); z-index: 1001; width: 320px; }
@@ -97,8 +96,6 @@
     </style>
 </head>
 <body>
-
-<button id="toggle-panel" onclick="toggleSidebar()">☰</button>
 
 <div id="lock-screen">
     <div id="lock-perf-name" style="color:#666; margin-bottom:20px; font-weight:bold; font-size:1.5rem;">NO TITLE</div>
@@ -112,7 +109,10 @@
     </div>
 
     <div id="sidebar">
-        <div id="side-clock">00:00:00</div>
+        <div id="side-header">
+            <span id="side-clock">00:00:00</span>
+            <button id="toggle-panel" onclick="toggleSidebar()">☰</button>
+        </div>
         
         <div style="padding:15px; border-bottom:1px solid #333;">
             <label style="font-size:0.7rem; color:#888; font-weight:bold;">PERFORMANCE</label>
@@ -170,6 +170,15 @@
         const sidebar = document.getElementById('sidebar');
         sidebar.classList.toggle('hidden');
         document.getElementById('toggle-panel').textContent = sidebar.classList.contains('hidden') ? '📁' : '☰';
+        
+        // パネルを隠した時、ボタンだけを画面右上に浮かせるための処理
+        if (sidebar.classList.contains('hidden')) {
+            document.getElementById('toggle-panel').style.position = 'fixed';
+            document.getElementById('toggle-panel').style.top = '10px';
+            document.getElementById('toggle-panel').style.right = '10px';
+        } else {
+            document.getElementById('toggle-panel').style.position = 'static';
+        }
     }
 
     function updatePerfName() {
@@ -186,7 +195,6 @@
 
     function handleFiles(selectedFiles) {
         for (let file of selectedFiles) {
-            // 重複チェック
             if (!files.find(f => f.originalName === file.name)) {
                 files.push({ 
                     id: 'f' + Date.now() + Math.random(),
@@ -217,7 +225,8 @@
             files.filter(f => f.groupId === group.id).forEach((file) => {
                 const index = files.indexOf(file);
                 const fDiv = document.createElement('div');
-                fDiv.className = 'file-item' + (document.getElementById('pdf-viewer').src.includes(file.url) ? ' active' : '');
+                const isCur = document.getElementById('pdf-viewer').src.includes(file.url);
+                fDiv.className = 'file-item' + (isCur ? ' active' : '');
                 fDiv.draggable = true;
                 fDiv.ondragstart = (e) => e.dataTransfer.setData('text', file.id);
                 fDiv.innerHTML = `
@@ -300,16 +309,11 @@
         if (file) { file.groupId = groupId; renderAll(); }
     }
 
-    // Config Persistence Functions
     function exportConfig() {
         const config = {
             perfName: document.getElementById('perf-input').value,
             groups: groups,
-            files: files.map(f => ({
-                name: f.name,
-                originalName: f.originalName,
-                groupId: f.groupId
-            }))
+            files: files.map(f => ({ name: f.name, originalName: f.originalName, groupId: f.groupId }))
         };
         const blob = new Blob([JSON.stringify(config, null, 2)], {type: 'application/json'});
         const url = URL.createObjectURL(blob);
@@ -328,20 +332,16 @@
             document.getElementById('perf-input').value = config.perfName || "";
             updatePerfName();
             groups = config.groups;
-            // PDFの実体はないので、メタデータだけ準備
-            files = config.files.map(f => ({
-                ...f,
-                id: 'f' + Math.random(),
-                url: "" // 後でPDFを追加した時に紐付ける
-            }));
+            files = config.files.map(f => ({ ...f, id: 'f' + Math.random(), url: "" }));
             renderAll();
-            alert("構成を読み込みました。PDFファイルを一括追加してください。ファイル名で自動照合されます。");
+            alert("読み込み完了。PDFを読み込んでください。");
         };
         reader.readAsText(file);
     }
 
     function toggleLock(status) {
         document.getElementById('lock-screen').style.display = status ? 'flex' : 'none';
+        if (status) document.documentElement.requestFullscreen?.().catch(()=>{});
     }
 
     const unlockBtn = document.getElementById('unlock-btn');
