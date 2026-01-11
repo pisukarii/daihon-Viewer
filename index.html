@@ -3,12 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>SCRIPT VIEWER -PRO-</title>
+    <title>SCRIPT VIEWER -ULTIMATE-</title>
     <style>
         :root {
             --bg-color: #000000;
             --panel-color: #111111;
-            --group-header-bg: #222222;
             --border-color: #333333;
             --accent-color: #ffffff;
             --text-color: #ffffff;
@@ -22,60 +21,64 @@
             overflow: hidden;
         }
 
-        .container { display: flex; height: 100vh; width: 100vw; }
+        .container { display: flex; height: 100vh; width: 100vw; position: relative; }
 
         /* PDFエリア */
-        #viewer-area { flex-grow: 1; background: #000; position: relative; }
+        #viewer-area { flex-grow: 1; background: #000; position: relative; transition: all 0.3s; }
         iframe { width: 100%; height: 100%; border: none; }
 
-        /* サイドパネル (幅を以前のサイズに調整) */
+        /* サイドパネル */
         #sidebar {
             width: 350px; background: var(--panel-color);
             display: flex; flex-direction: column; border-left: 1px solid var(--border-color);
+            transition: transform 0.3s, margin-right 0.3s;
+            position: relative;
+            z-index: 10;
         }
 
-        #side-clock {
+        /* パネルが隠れた状態 */
+        #sidebar.hidden {
+            margin-right: -350px;
+            transform: translateX(350px);
+        }
+
+        /* 時計（常に右上に配置） */
+        #clock-container {
             padding: 15px 20px; font-size: 2.2rem; font-weight: 800;
-            text-align: right; border-bottom: 2px solid var(--border-color);
-            background: #000; letter-spacing: -1px;
+            text-align: right; background: #000; letter-spacing: -1px;
+            border-bottom: 2px solid var(--border-color);
+            display: flex; justify-content: space-between; align-items: center;
+        }
+
+        /* パネル開閉ボタン */
+        #toggle-panel {
+            position: fixed; top: 10px; right: 10px;
+            width: 50px; height: 50px;
+            background: rgba(0,0,0,0.6); color: #fff;
+            border: 1px solid var(--border-color);
+            font-size: 1.5rem; cursor: pointer; z-index: 100;
+            display: flex; align-items: center; justify-content: center;
         }
 
         /* リストエリア */
         #list-container { flex-grow: 1; overflow-y: auto; }
-
-        .group-container { border-bottom: 1px solid #222; }
         .group-header {
-            background: var(--group-header-bg); padding: 12px;
-            display: flex; align-items: center; cursor: pointer;
+            background: #222; padding: 12px; display: flex; cursor: pointer;
             font-weight: bold; font-size: 0.8rem; border-bottom: 1px solid #333;
         }
-        .group-title { flex-grow: 1; text-transform: uppercase; }
-
         .file-list { min-height: 20px; padding: 5px 0; background: #050505; }
-        .file-list.collapsed { display: none; }
-
         .file-item {
             background: #000; margin-bottom: 2px; padding: 12px;
-            border: 1px solid var(--border-color);
-            display: flex; align-items: center; cursor: grab;
+            border: 1px solid var(--border-color); display: flex; align-items: center; cursor: grab;
         }
-        .file-item:active { cursor: grabbing; opacity: 0.5; }
         .file-item.active { border: 1px solid var(--accent-color); background: #1a1a1a; }
         .file-name { flex-grow: 1; font-size: 0.9rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: bold; }
         
-        .item-controls { display: flex; gap: 5px; margin-left: 10px; }
-        .mini-btn { 
-            background: #000; border: 1px solid #444; color: #fff; 
-            padding: 8px 5px; cursor: pointer; font-size: 0.7rem; min-width: 30px; text-align: center;
-        }
+        .mini-btn { background: #000; border: 1px solid #444; color: #fff; padding: 8px 5px; cursor: pointer; font-size: 0.7rem; min-width: 30px; text-align: center; }
 
-        /* 下部ボタン */
+        /* 操作系 */
         .controls { padding: 15px; background: #000; border-top: 1px solid var(--border-color); }
-        .btn {
-            display: block; width: 100%; padding: 18px; margin-bottom: 10px;
-            border: 1px solid var(--accent-color); background: #000; color: #fff;
-            cursor: pointer; font-size: 1rem; font-weight: 900; border-radius: 0;
-        }
+        .btn { display: block; width: 100%; padding: 18px; margin-bottom: 10px; border: 1px solid var(--accent-color); background: #000; color: #fff; cursor: pointer; font-size: 1rem; font-weight: 900; }
         .btn-lock { background: #300; border-color: #f00; color: #f66; }
 
         /* ロック画面 */
@@ -87,15 +90,14 @@
         #lock-clock { font-size: 12rem; font-weight: 900; color: #fff; letter-spacing: -5px; }
 
         /* モーダル */
-        .modal {
-            display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            background: #000; padding: 25px; border: 2px solid var(--accent-color); z-index: 1001; width: 320px;
-        }
+        .modal { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #000; padding: 25px; border: 2px solid var(--accent-color); z-index: 1001; width: 320px; }
         .modal-mask { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 1000; }
-        input, select { width: 100%; padding: 12px; margin-bottom: 15px; background: #000; border: 1px solid var(--border-color); color: #fff; box-sizing: border-box; border-radius: 0; }
+        input, select { width: 100%; padding: 12px; margin-bottom: 15px; background: #000; border: 1px solid var(--border-color); color: #fff; box-sizing: border-box; }
     </style>
 </head>
 <body>
+
+<button id="toggle-panel" onclick="toggleSidebar()">☰</button>
 
 <div id="lock-screen">
     <div id="lock-perf-name" style="color:#666; margin-bottom:20px; font-weight:bold; font-size:1.5rem;">NO TITLE</div>
@@ -109,11 +111,13 @@
     </div>
 
     <div id="sidebar">
-        <div id="side-clock">00:00:00</div>
+        <div id="clock-container">
+            <span id="side-clock">00:00:00</span>
+        </div>
         
         <div style="padding:15px; border-bottom:1px solid #333;">
             <label style="font-size:0.7rem; color:#888; font-weight:bold;">PERFORMANCE</label>
-            <input type="text" id="perf-input" placeholder="UNSET" oninput="updatePerfName()" style="margin-top:5px; margin-bottom:0;">
+            <input type="text" id="perf-input" placeholder="UNSET" oninput="updatePerfName()" style="margin-top:5px; margin-bottom:0; width:100%; background:#000; border:1px solid #333; color:#fff; padding:8px;">
         </div>
         
         <div id="list-container"></div>
@@ -138,10 +142,8 @@
         <option value="香盤表">香盤表</option><option value="舞台図面">舞台図面</option>
     </select>
     <input type="text" id="edit-name-input">
-    
     <label style="font-size:0.7rem; font-weight:bold;">ASSIGN GROUP</label>
     <select id="group-assign-select"></select>
-    
     <button class="btn" onclick="saveEdit()">UPDATE</button>
     <button class="btn" onclick="deleteFile()" style="border-color:#f00; color:#f00; margin-top:10px;">DELETE FILE</button>
 </div>
@@ -151,7 +153,6 @@
     let files = [];
     let currentEditIndex = null;
     let lockTimer;
-    let draggedFileId = null;
 
     function updateClock() {
         const timeStr = new Date().toTimeString().split(' ')[0];
@@ -160,6 +161,13 @@
     }
     setInterval(updateClock, 1000);
     updateClock();
+
+    function toggleSidebar() {
+        const sidebar = document.getElementById('sidebar');
+        sidebar.classList.toggle('hidden');
+        // ボタンのテキストを切り替え
+        document.getElementById('toggle-panel').textContent = sidebar.classList.contains('hidden') ? '📁' : '☰';
+    }
 
     function updatePerfName() {
         document.getElementById('lock-perf-name').textContent = document.getElementById('perf-input').value || "NO TITLE";
@@ -183,7 +191,7 @@
             });
         }
         renderAll();
-        if (files.length > 0 && !document.getElementById('pdf-viewer').src) loadPDF(files[files.length-1].url);
+        if (files.length > 0 && !document.getElementById('pdf-viewer').src) loadPDF(files[0].url);
     }
 
     function renderAll() {
@@ -197,7 +205,7 @@
                 <div class="group-header" ondragover="event.preventDefault()" ondrop="dropInGroup(event, '${group.id}')">
                     <span class="group-title" onclick="toggleGroup('${group.id}')">${group.collapsed ? '▶' : '▼'} ${group.name}</span>
                 </div>
-                <div class="file-list ${group.collapsed ? 'collapsed' : ''}" id="list-${group.id}" ondragover="event.preventDefault()" ondrop="dropInGroup(event, '${group.id}')"></div>
+                <div class="file-list ${group.collapsed ? 'collapsed' : ''}" ondragover="event.preventDefault()" ondrop="dropInGroup(event, '${group.id}')"></div>
             `;
             container.appendChild(gDiv);
 
@@ -208,8 +216,7 @@
                 const isActive = document.getElementById('pdf-viewer').src.includes(file.url);
                 fDiv.className = 'file-item' + (isActive ? ' active' : '');
                 fDiv.draggable = true;
-                fDiv.id = file.id;
-                fDiv.ondragstart = (e) => { draggedFileId = file.id; e.dataTransfer.setData('text', file.id); };
+                fDiv.ondragstart = (e) => e.dataTransfer.setData('text', file.id);
                 
                 fDiv.innerHTML = `
                     <div class="file-name" onclick="loadPDF('${file.url}')">${file.name}</div>
@@ -228,10 +235,7 @@
         e.preventDefault();
         const fileId = e.dataTransfer.getData('text');
         const file = files.find(f => f.id === fileId);
-        if (file) {
-            file.groupId = groupId;
-            renderAll();
-        }
+        if (file) { file.groupId = groupId; renderAll(); }
     }
 
     function moveFile(index, dir) {
@@ -287,7 +291,7 @@
     }
 
     function deleteFile() {
-        if (confirm("このファイルを削除しますか？")) {
+        if (confirm("DELETE THIS FILE?")) {
             files.splice(currentEditIndex, 1);
             renderAll();
             closeModal();
