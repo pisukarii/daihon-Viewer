@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>SCRIPT VIEWER -GROUPING-</title>
+    <title>SCRIPT VIEWER -PRO-</title>
     <style>
         :root {
             --bg-color: #000000;
@@ -28,9 +28,9 @@
         #viewer-area { flex-grow: 1; background: #000; position: relative; }
         iframe { width: 100%; height: 100%; border: none; }
 
-        /* サイドパネル */
+        /* サイドパネル (幅を以前のサイズに調整) */
         #sidebar {
-            width: 380px; background: var(--panel-color);
+            width: 350px; background: var(--panel-color);
             display: flex; flex-direction: column; border-left: 1px solid var(--border-color);
         }
 
@@ -40,42 +40,41 @@
             background: #000; letter-spacing: -1px;
         }
 
-        /* スクロールエリア */
-        #list-container { flex-grow: 1; overflow-y: auto; padding-bottom: 20px; }
+        /* リストエリア */
+        #list-container { flex-grow: 1; overflow-y: auto; }
 
-        /* グループヘッダー */
-        .group-container { margin-bottom: 5px; }
+        .group-container { border-bottom: 1px solid #222; }
         .group-header {
-            background: var(--group-header-bg); padding: 10px;
-            display: flex; align-items: center; justify-content: space-between;
-            cursor: pointer; border-bottom: 1px solid #444; font-weight: bold; font-size: 0.8rem;
+            background: var(--group-header-bg); padding: 12px;
+            display: flex; align-items: center; cursor: pointer;
+            font-weight: bold; font-size: 0.8rem; border-bottom: 1px solid #333;
         }
-        .group-header:hover { background: #333; }
-        .group-title { flex-grow: 1; text-transform: uppercase; letter-spacing: 1px; }
+        .group-title { flex-grow: 1; text-transform: uppercase; }
 
-        /* ファイルリスト項目 */
-        .file-list { display: block; padding: 5px 0 5px 15px; border-left: 2px solid #222; }
+        .file-list { min-height: 20px; padding: 5px 0; background: #050505; }
         .file-list.collapsed { display: none; }
+
         .file-item {
-            background: #000; margin-bottom: 2px; padding: 10px;
+            background: #000; margin-bottom: 2px; padding: 12px;
             border: 1px solid var(--border-color);
-            display: flex; align-items: center;
+            display: flex; align-items: center; cursor: grab;
         }
+        .file-item:active { cursor: grabbing; opacity: 0.5; }
         .file-item.active { border: 1px solid var(--accent-color); background: #1a1a1a; }
-        .file-name { flex-grow: 1; cursor: pointer; font-size: 0.85rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .file-name { flex-grow: 1; font-size: 0.9rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: bold; }
         
-        /* 操作用ミニボタン */
+        .item-controls { display: flex; gap: 5px; margin-left: 10px; }
         .mini-btn { 
             background: #000; border: 1px solid #444; color: #fff; 
-            padding: 5px; cursor: pointer; font-size: 0.65rem; min-width: 28px; text-align: center;
+            padding: 8px 5px; cursor: pointer; font-size: 0.7rem; min-width: 30px; text-align: center;
         }
 
         /* 下部ボタン */
         .controls { padding: 15px; background: #000; border-top: 1px solid var(--border-color); }
         .btn {
-            display: block; width: 100%; padding: 15px; margin-bottom: 8px;
+            display: block; width: 100%; padding: 18px; margin-bottom: 10px;
             border: 1px solid var(--accent-color); background: #000; color: #fff;
-            cursor: pointer; font-size: 0.9rem; font-weight: 900; border-radius: 0;
+            cursor: pointer; font-size: 1rem; font-weight: 900; border-radius: 0;
         }
         .btn-lock { background: #300; border-color: #f00; color: #f66; }
 
@@ -87,21 +86,21 @@
         }
         #lock-clock { font-size: 12rem; font-weight: 900; color: #fff; letter-spacing: -5px; }
 
-        /* モーダル共通 */
+        /* モーダル */
         .modal {
             display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
             background: #000; padding: 25px; border: 2px solid var(--accent-color); z-index: 1001; width: 320px;
         }
         .modal-mask { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 1000; }
-        input, select { width: 100%; padding: 12px; margin-bottom: 15px; background: #000; border: 1px solid var(--border-color); color: #fff; box-sizing: border-box; }
+        input, select { width: 100%; padding: 12px; margin-bottom: 15px; background: #000; border: 1px solid var(--border-color); color: #fff; box-sizing: border-box; border-radius: 0; }
     </style>
 </head>
 <body>
 
 <div id="lock-screen">
-    <div id="lock-perf-name" style="color:#666; margin-bottom:20px; font-weight:bold;">NO TITLE</div>
+    <div id="lock-perf-name" style="color:#666; margin-bottom:20px; font-weight:bold; font-size:1.5rem;">NO TITLE</div>
     <div id="lock-clock">00:00:00</div>
-    <div id="unlock-btn" style="width:300px; padding:20px; border:1px solid #444; color:#444; margin-top:40px; font-weight:bold; cursor:pointer;">HOLD TO UNLOCK</div>
+    <div id="unlock-btn" style="width:350px; padding:25px; border:1px solid #444; color:#444; margin-top:40px; font-weight:bold; cursor:pointer; font-size:1.2rem;">HOLD TO UNLOCK</div>
 </div>
 
 <div class="container">
@@ -112,17 +111,17 @@
     <div id="sidebar">
         <div id="side-clock">00:00:00</div>
         
-        <div style="padding:10px; border-bottom:1px solid #333;">
-            <input type="text" id="perf-input" placeholder="PERFORMANCE NAME" oninput="updatePerfName()" style="margin-bottom:0; font-size:0.8rem; padding:8px;">
+        <div style="padding:15px; border-bottom:1px solid #333;">
+            <label style="font-size:0.7rem; color:#888; font-weight:bold;">PERFORMANCE</label>
+            <input type="text" id="perf-input" placeholder="UNSET" oninput="updatePerfName()" style="margin-top:5px; margin-bottom:0;">
         </div>
         
-        <div id="list-container">
-            </div>
+        <div id="list-container"></div>
         
         <div class="controls">
             <input type="file" id="file-input" accept="application/pdf" multiple style="display:none;" onchange="handleFiles(this.files)">
-            <button class="btn" onclick="document.getElementById('file-input').click()">+ ADD PDF</button>
-            <button class="btn" onclick="addNewGroup()" style="border-color:#666; color:#aaa; padding:10px;">+ NEW GROUP</button>
+            <button class="btn" onclick="document.getElementById('file-input').click()">+ ADD PDF FILES</button>
+            <button class="btn" onclick="addNewGroup()" style="border-color:#666; color:#aaa; padding:10px; font-size:0.8rem;">+ NEW GROUP</button>
             <button class="btn btn-lock" onclick="toggleLock(true)">LOCK SYSTEM</button>
         </div>
     </div>
@@ -130,7 +129,7 @@
 
 <div class="modal-mask" id="modal-mask" onclick="closeModal()"></div>
 <div class="modal" id="edit-modal">
-    <label style="font-size:0.7rem; font-weight:bold;">RENAME / GROUP</label>
+    <label style="font-size:0.7rem; font-weight:bold;">NAME</label>
     <select id="preset-select" onchange="document.getElementById('edit-name-input').value=this.value">
         <option value="">CUSTOM...</option>
         <option value="台本">台本</option><option value="仕込み図">仕込み図</option>
@@ -144,6 +143,7 @@
     <select id="group-assign-select"></select>
     
     <button class="btn" onclick="saveEdit()">UPDATE</button>
+    <button class="btn" onclick="deleteFile()" style="border-color:#f00; color:#f00; margin-top:10px;">DELETE FILE</button>
 </div>
 
 <script>
@@ -151,6 +151,7 @@
     let files = [];
     let currentEditIndex = null;
     let lockTimer;
+    let draggedFileId = null;
 
     function updateClock() {
         const timeStr = new Date().toTimeString().split(' ')[0];
@@ -165,7 +166,7 @@
     }
 
     function addNewGroup() {
-        const name = prompt("グループ名を入力してください:", "NEW GROUP");
+        const name = prompt("グループ名を入力:", "NEW GROUP");
         if (name) {
             groups.push({ id: 'g' + Date.now(), name: name, collapsed: false });
             renderAll();
@@ -175,35 +176,14 @@
     function handleFiles(selectedFiles) {
         for (let file of selectedFiles) {
             files.push({ 
-                id: 'f' + Math.random(),
+                id: 'f' + Date.now() + Math.random(),
                 name: file.name, 
                 url: URL.createObjectURL(file), 
                 groupId: 'default' 
             });
         }
         renderAll();
-        if (files.length > 0 && !document.getElementById('pdf-viewer').src) loadPDF(files[0].url);
-    }
-
-    function toggleGroup(groupId) {
-        const group = groups.find(g => g.id === groupId);
-        group.collapsed = !group.collapsed;
-        renderAll();
-    }
-
-    function moveFile(index, dir) {
-        const targetFile = files[index];
-        const sameGroupFiles = files.filter(f => f.groupId === targetFile.groupId);
-        const idxInGroup = sameGroupFiles.indexOf(targetFile);
-        
-        if (dir === -1 && idxInGroup > 0) {
-            const globalPrevIdx = files.indexOf(sameGroupFiles[idxInGroup - 1]);
-            [files[index], files[globalPrevIdx]] = [files[globalPrevIdx], files[index]];
-        } else if (dir === 1 && idxInGroup < sameGroupFiles.length - 1) {
-            const globalNextIdx = files.indexOf(sameGroupFiles[idxInGroup + 1]);
-            [files[index], files[globalNextIdx]] = [files[globalNextIdx], files[index]];
-        }
-        renderAll();
+        if (files.length > 0 && !document.getElementById('pdf-viewer').src) loadPDF(files[files.length-1].url);
     }
 
     function renderAll() {
@@ -214,31 +194,64 @@
             const gDiv = document.createElement('div');
             gDiv.className = 'group-container';
             gDiv.innerHTML = `
-                <div class="group-header" onclick="toggleGroup('${group.id}')">
-                    <span class="group-title">${group.collapsed ? '▶' : '▼'} ${group.name}</span>
+                <div class="group-header" ondragover="event.preventDefault()" ondrop="dropInGroup(event, '${group.id}')">
+                    <span class="group-title" onclick="toggleGroup('${group.id}')">${group.collapsed ? '▶' : '▼'} ${group.name}</span>
                 </div>
-                <div class="file-list ${group.collapsed ? 'collapsed' : ''}" id="list-${group.id}"></div>
+                <div class="file-list ${group.collapsed ? 'collapsed' : ''}" id="list-${group.id}" ondragover="event.preventDefault()" ondrop="dropInGroup(event, '${group.id}')"></div>
             `;
             container.appendChild(gDiv);
 
             const listDiv = gDiv.querySelector('.file-list');
-            files.forEach((file, index) => {
-                if (file.groupId === group.id) {
-                    const fDiv = document.createElement('div');
-                    const isActive = document.getElementById('pdf-viewer').src.includes(file.url);
-                    fDiv.className = 'file-item' + (isActive ? ' active' : '');
-                    fDiv.innerHTML = `
-                        <div class="file-name" onclick="loadPDF('${file.url}')">${file.name}</div>
-                        <div class="item-controls">
-                            <div class="mini-btn" onclick="moveFile(${index}, -1)">▲</div>
-                            <div class="mini-btn" onclick="moveFile(${index}, 1)">▼</div>
-                            <div class="mini-btn" onclick="openEdit(${index})">ID</div>
-                        </div>
-                    `;
-                    listDiv.appendChild(fDiv);
-                }
+            files.filter(f => f.groupId === group.id).forEach((file) => {
+                const index = files.indexOf(file);
+                const fDiv = document.createElement('div');
+                const isActive = document.getElementById('pdf-viewer').src.includes(file.url);
+                fDiv.className = 'file-item' + (isActive ? ' active' : '');
+                fDiv.draggable = true;
+                fDiv.id = file.id;
+                fDiv.ondragstart = (e) => { draggedFileId = file.id; e.dataTransfer.setData('text', file.id); };
+                
+                fDiv.innerHTML = `
+                    <div class="file-name" onclick="loadPDF('${file.url}')">${file.name}</div>
+                    <div class="item-controls">
+                        <div class="mini-btn" onclick="moveFile(${index}, -1)">▲</div>
+                        <div class="mini-btn" onclick="moveFile(${index}, 1)">▼</div>
+                        <div class="mini-btn" onclick="openEdit(${index})">EDIT</div>
+                    </div>
+                `;
+                listDiv.appendChild(fDiv);
             });
         });
+    }
+
+    function dropInGroup(e, groupId) {
+        e.preventDefault();
+        const fileId = e.dataTransfer.getData('text');
+        const file = files.find(f => f.id === fileId);
+        if (file) {
+            file.groupId = groupId;
+            renderAll();
+        }
+    }
+
+    function moveFile(index, dir) {
+        const target = files[index];
+        const sameGroup = files.filter(f => f.groupId === target.groupId);
+        const idxInGroup = sameGroup.indexOf(target);
+        if (dir === -1 && idxInGroup > 0) {
+            const prev = files.indexOf(sameGroup[idxInGroup - 1]);
+            [files[index], files[prev]] = [files[prev], files[index]];
+        } else if (dir === 1 && idxInGroup < sameGroup.length - 1) {
+            const next = files.indexOf(sameGroup[idxInGroup + 1]);
+            [files[index], files[next]] = [files[next], files[index]];
+        }
+        renderAll();
+    }
+
+    function toggleGroup(id) {
+        const g = groups.find(g => g.id === id);
+        g.collapsed = !g.collapsed;
+        renderAll();
     }
 
     function loadPDF(url) {
@@ -250,17 +263,13 @@
         currentEditIndex = index;
         const file = files[index];
         document.getElementById('edit-name-input').value = file.name;
-        
-        const groupSelect = document.getElementById('group-assign-select');
-        groupSelect.innerHTML = '';
+        const gSel = document.getElementById('group-assign-select');
+        gSel.innerHTML = '';
         groups.forEach(g => {
             const opt = document.createElement('option');
-            opt.value = g.id;
-            opt.textContent = g.name;
-            opt.selected = (g.id === file.groupId);
-            groupSelect.appendChild(opt);
+            opt.value = g.id; opt.textContent = g.name; opt.selected = (g.id === file.groupId);
+            gSel.appendChild(opt);
         });
-
         document.getElementById('modal-mask').style.display = 'block';
         document.getElementById('edit-modal').style.display = 'block';
     }
@@ -271,16 +280,22 @@
     }
 
     function saveEdit() {
-        const file = files[currentEditIndex];
-        file.name = document.getElementById('edit-name-input').value;
-        file.groupId = document.getElementById('group-assign-select').value;
+        files[currentEditIndex].name = document.getElementById('edit-name-input').value;
+        files[currentEditIndex].groupId = document.getElementById('group-assign-select').value;
         renderAll();
         closeModal();
     }
 
+    function deleteFile() {
+        if (confirm("このファイルを削除しますか？")) {
+            files.splice(currentEditIndex, 1);
+            renderAll();
+            closeModal();
+        }
+    }
+
     function toggleLock(status) {
-        const screen = document.getElementById('lock-screen');
-        screen.style.display = status ? 'flex' : 'none';
+        document.getElementById('lock-screen').style.display = status ? 'flex' : 'none';
         if (status) document.documentElement.requestFullscreen?.().catch(()=>{});
     }
 
