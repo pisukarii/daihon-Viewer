@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>SCRIPT VIEWER -FIXED-</title>
+    <title>SCRIPT VIEWER -FINAL-</title>
     <style>
         :root {
             --bg-color: #000000;
@@ -23,26 +23,31 @@
 
         .container { display: flex; height: 100vh; width: 100vw; overflow: hidden; }
 
-        /* PDFエリア：サイドパネルに合わせて自動で伸び縮みする */
+        /* PDFエリア */
         #viewer-area { flex-grow: 1; height: 100%; background: #000; position: relative; }
         iframe { width: 100%; height: 100%; border: none; }
 
-        /* サイドパネル：幅 350px 固定、hidden時は右へスライド */
+        /* サイドパネル */
         #sidebar {
             width: 350px; 
-            min-width: 350px; /* 幅を固定 */
+            min-width: 350px;
             background: var(--panel-color);
             display: flex; flex-direction: column; 
             border-left: 1px solid var(--border-color);
             transition: margin-right 0.3s ease;
+            position: relative;
         }
 
-        /* パネル非表示：マージンを使って右へ追い出す */
-        #sidebar.hidden {
-            margin-right: -350px;
+        #sidebar.hidden { margin-right: -350px; }
+
+        /* 時計：サイドバー内の最上部 */
+        #side-clock {
+            padding: 15px 20px; font-size: 2.2rem; font-weight: 800;
+            text-align: right; border-bottom: 2px solid var(--border-color);
+            background: #000; letter-spacing: -1px;
         }
 
-        /* パネル開閉トグルボタン：パネルの状態に関わらず右上に固定 */
+        /* 開閉ボタン：右上に配置 */
         #toggle-panel {
             position: fixed; top: 10px; right: 10px;
             width: 50px; height: 50px;
@@ -52,38 +57,53 @@
             display: flex; align-items: center; justify-content: center;
         }
 
-        /* 時計 */
-        #clock-container {
-            padding: 15px 20px; font-size: 2.2rem; font-weight: 800;
-            text-align: right; background: #000; letter-spacing: -1px;
-            border-bottom: 2px solid var(--border-color);
-        }
-
-        /* リスト・コントロール（以前の使い勝手を維持） */
+        /* リストUI：以前の「角ばった・太字・右配置ボタン」を復元 */
         #list-container { flex-grow: 1; overflow-y: auto; }
+        
         .group-header {
             background: #222; padding: 12px; display: flex; cursor: pointer;
             font-weight: bold; font-size: 0.8rem; border-bottom: 1px solid #333;
+            text-transform: uppercase; letter-spacing: 1px;
         }
-        .file-list { min-height: 20px; padding: 5px 0; background: #050505; }
+
+        .file-list { min-height: 20px; padding: 2px 0; background: #000; }
+
         .file-item {
             background: #000; margin-bottom: 2px; padding: 12px;
-            border: 1px solid var(--border-color); display: flex; align-items: center; cursor: grab;
+            border: 1px solid var(--border-color); 
+            display: flex; align-items: center; cursor: grab;
         }
         .file-item.active { border: 1px solid var(--accent-color); background: #1a1a1a; }
-        .file-name { flex-grow: 1; font-size: 0.9rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: bold; }
-        .mini-btn { background: #000; border: 1px solid #444; color: #fff; padding: 8px 5px; cursor: pointer; font-size: 0.7rem; min-width: 30px; text-align: center; }
+        .file-name { 
+            flex-grow: 1; font-size: 0.9rem; font-weight: 900; 
+            overflow: hidden; text-overflow: ellipsis; white-space: nowrap; 
+        }
+        
+        /* 操作ボタンの配置 */
+        .item-controls { display: flex; gap: 5px; margin-left: 10px; }
+        .mini-btn { 
+            background: #000; border: 1px solid #444; color: #fff; 
+            padding: 8px 5px; cursor: pointer; font-size: 0.7rem; 
+            min-width: 30px; text-align: center; font-weight: bold;
+        }
 
+        /* 下部コントロール */
         .controls { padding: 15px; background: #000; border-top: 1px solid var(--border-color); }
-        .btn { display: block; width: 100%; padding: 18px; margin-bottom: 10px; border: 1px solid var(--accent-color); background: #000; color: #fff; cursor: pointer; font-size: 1rem; font-weight: 900; text-align: center; }
+        .btn { 
+            display: block; width: 100%; padding: 18px; margin-bottom: 10px; 
+            border: 1px solid var(--accent-color); background: #000; color: #fff; 
+            cursor: pointer; font-size: 1rem; font-weight: 900; text-align: center;
+        }
         .btn-lock { background: #300; border-color: #f00; color: #f66; }
 
-        /* ロック・モーダル系は変更なし */
+        /* ロック画面 */
         #lock-screen { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 10000; flex-direction: column; justify-content: center; align-items: center; text-align: center; }
         #lock-clock { font-size: 12rem; font-weight: 900; color: #fff; letter-spacing: -5px; }
+
+        /* モーダル */
         .modal { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #000; padding: 25px; border: 2px solid var(--accent-color); z-index: 1001; width: 320px; }
         .modal-mask { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 1000; }
-        input, select { width: 100%; padding: 12px; margin-bottom: 15px; background: #000; border: 1px solid var(--border-color); color: #fff; box-sizing: border-box; }
+        input, select { width: 100%; padding: 12px; margin-bottom: 15px; background: #000; border: 1px solid var(--border-color); color: #fff; font-weight: bold; }
     </style>
 </head>
 <body>
@@ -102,9 +122,7 @@
     </div>
 
     <div id="sidebar">
-        <div id="clock-container">
-            <span id="side-clock">00:00:00</span>
-        </div>
+        <div id="side-clock">00:00:00</div>
         
         <div style="padding:15px; border-bottom:1px solid #333;">
             <label style="font-size:0.7rem; color:#888; font-weight:bold;">PERFORMANCE</label>
@@ -140,7 +158,6 @@
 </div>
 
 <script>
-    // JSのロジックはV5.xとV6を統合し、ドラッグ&ドロップ等も完備しています
     let groups = [{ id: 'default', name: 'MAIN DOCUMENTS', collapsed: false }];
     let files = [];
     let currentEditIndex = null;
