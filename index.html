@@ -3,76 +3,80 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>SCRIPT VIEWER -BLACK-</title>
+    <title>SCRIPT VIEWER -GROUPING-</title>
     <style>
         :root {
             --bg-color: #000000;
             --panel-color: #111111;
+            --group-header-bg: #222222;
             --border-color: #333333;
             --accent-color: #ffffff;
             --text-color: #ffffff;
+            --clock-font: 'Helvetica Neue', Arial, sans-serif;
         }
 
         body, html {
             margin: 0; padding: 0; height: 100%; width: 100%;
-            font-family: 'Courier New', Consolas, monospace; /* 角ばったフォント */
+            font-family: var(--clock-font);
             background: var(--bg-color); color: var(--text-color);
             overflow: hidden;
         }
 
         .container { display: flex; height: 100vh; width: 100vw; }
 
-        /* PDF表示エリア */
+        /* PDFエリア */
         #viewer-area { flex-grow: 1; background: #000; position: relative; }
-        iframe { width: 100%; height: 100%; border: none; filter: invert(0); }
+        iframe { width: 100%; height: 100%; border: none; }
 
-        /* 右側サイドパネル */
+        /* サイドパネル */
         #sidebar {
-            width: 350px; background: var(--panel-color);
+            width: 380px; background: var(--panel-color);
             display: flex; flex-direction: column; border-left: 1px solid var(--border-color);
         }
 
-        /* 右上時計 */
         #side-clock {
-            padding: 15px; font-size: 2rem; font-weight: bold;
+            padding: 15px 20px; font-size: 2.2rem; font-weight: 800;
             text-align: right; border-bottom: 2px solid var(--border-color);
-            background: #000; letter-spacing: 2px;
+            background: #000; letter-spacing: -1px;
         }
 
-        .config-area { padding: 15px; border-bottom: 1px solid var(--border-color); }
-        .config-area label { font-size: 0.7rem; color: #888; display: block; margin-bottom: 5px; }
-        .config-area input {
-            width: 100%; background: #000; border: 1px solid var(--border-color); color: white;
-            padding: 10px; box-sizing: border-box; border-radius: 0; /* 角を立たせる */
-        }
+        /* スクロールエリア */
+        #list-container { flex-grow: 1; overflow-y: auto; padding-bottom: 20px; }
 
-        /* ファイルリスト（スクロール可能） */
-        #file-list { flex-grow: 1; overflow-y: auto; padding: 10px; }
+        /* グループヘッダー */
+        .group-container { margin-bottom: 5px; }
+        .group-header {
+            background: var(--group-header-bg); padding: 10px;
+            display: flex; align-items: center; justify-content: space-between;
+            cursor: pointer; border-bottom: 1px solid #444; font-weight: bold; font-size: 0.8rem;
+        }
+        .group-header:hover { background: #333; }
+        .group-title { flex-grow: 1; text-transform: uppercase; letter-spacing: 1px; }
+
+        /* ファイルリスト項目 */
+        .file-list { display: block; padding: 5px 0 5px 15px; border-left: 2px solid #222; }
+        .file-list.collapsed { display: none; }
         .file-item {
-            background: #000; margin-bottom: 2px; padding: 12px;
+            background: #000; margin-bottom: 2px; padding: 10px;
             border: 1px solid var(--border-color);
-            display: flex; align-items: center; border-radius: 0;
+            display: flex; align-items: center;
         }
-        .file-item.active { border: 1px solid var(--accent-color); background: #222; }
-        .file-name { flex-grow: 1; cursor: pointer; font-size: 0.9rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .file-item.active { border: 1px solid var(--accent-color); background: #1a1a1a; }
+        .file-name { flex-grow: 1; cursor: pointer; font-size: 0.85rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         
-        /* 並び替え・編集ボタン */
-        .item-controls { display: flex; gap: 5px; margin-left: 10px; }
+        /* 操作用ミニボタン */
         .mini-btn { 
             background: #000; border: 1px solid #444; color: #fff; 
-            padding: 5px; cursor: pointer; font-size: 0.7rem; min-width: 25px; text-align: center;
+            padding: 5px; cursor: pointer; font-size: 0.65rem; min-width: 28px; text-align: center;
         }
-        .mini-btn:active { background: #fff; color: #000; }
 
-        /* 下部操作ボタン */
+        /* 下部ボタン */
         .controls { padding: 15px; background: #000; border-top: 1px solid var(--border-color); }
         .btn {
-            display: block; width: 100%; padding: 15px; margin-bottom: 10px;
+            display: block; width: 100%; padding: 15px; margin-bottom: 8px;
             border: 1px solid var(--accent-color); background: #000; color: #fff;
-            cursor: pointer; font-size: 0.9rem; font-weight: bold; border-radius: 0;
-            text-transform: uppercase;
+            cursor: pointer; font-size: 0.9rem; font-weight: 900; border-radius: 0;
         }
-        .btn:active { background: #fff; color: #000; }
         .btn-lock { background: #300; border-color: #f00; color: #f66; }
 
         /* ロック画面 */
@@ -81,25 +85,23 @@
             background: #000; z-index: 10000; flex-direction: column;
             justify-content: center; align-items: center; text-align: center;
         }
-        #lock-perf-name { font-size: 1.5rem; color: #666; margin-bottom: 10px; border: 1px solid #333; padding: 10px 40px; }
-        #lock-clock { font-size: 10rem; font-weight: bold; color: #fff; margin-bottom: 30px; }
-        #unlock-btn { width: 300px; padding: 20px; border: 1px solid #444; background: #000; color: #444; cursor: pointer; }
+        #lock-clock { font-size: 12rem; font-weight: 900; color: #fff; letter-spacing: -5px; }
 
-        /* モーダル */
+        /* モーダル共通 */
         .modal {
             display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            background: #000; padding: 30px; border: 2px solid var(--accent-color); z-index: 1001; width: 320px;
+            background: #000; padding: 25px; border: 2px solid var(--accent-color); z-index: 1001; width: 320px;
         }
         .modal-mask { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 1000; }
-        select, .modal input { width: 100%; padding: 12px; margin-bottom: 15px; background: #000; border: 1px solid var(--border-color); color: #fff; border-radius: 0; }
+        input, select { width: 100%; padding: 12px; margin-bottom: 15px; background: #000; border: 1px solid var(--border-color); color: #fff; box-sizing: border-box; }
     </style>
 </head>
 <body>
 
 <div id="lock-screen">
-    <div id="lock-perf-name">NO TITLE</div>
+    <div id="lock-perf-name" style="color:#666; margin-bottom:20px; font-weight:bold;">NO TITLE</div>
     <div id="lock-clock">00:00:00</div>
-    <div id="unlock-btn">HOLD TO UNLOCK</div>
+    <div id="unlock-btn" style="width:300px; padding:20px; border:1px solid #444; color:#444; margin-top:40px; font-weight:bold; cursor:pointer;">HOLD TO UNLOCK</div>
 </div>
 
 <div class="container">
@@ -110,16 +112,17 @@
     <div id="sidebar">
         <div id="side-clock">00:00:00</div>
         
-        <div class="config-area">
-            <label>PERFORMANCE NAME</label>
-            <input type="text" id="perf-input" placeholder="未設定" oninput="updatePerfName()">
+        <div style="padding:10px; border-bottom:1px solid #333;">
+            <input type="text" id="perf-input" placeholder="PERFORMANCE NAME" oninput="updatePerfName()" style="margin-bottom:0; font-size:0.8rem; padding:8px;">
         </div>
         
-        <div id="file-list"></div>
+        <div id="list-container">
+            </div>
         
         <div class="controls">
             <input type="file" id="file-input" accept="application/pdf" multiple style="display:none;" onchange="handleFiles(this.files)">
-            <button class="btn" onclick="document.getElementById('file-input').click()">+ ADD PDF FILES</button>
+            <button class="btn" onclick="document.getElementById('file-input').click()">+ ADD PDF</button>
+            <button class="btn" onclick="addNewGroup()" style="border-color:#666; color:#aaa; padding:10px;">+ NEW GROUP</button>
             <button class="btn btn-lock" onclick="toggleLock(true)">LOCK SYSTEM</button>
         </div>
     </div>
@@ -127,30 +130,30 @@
 
 <div class="modal-mask" id="modal-mask" onclick="closeModal()"></div>
 <div class="modal" id="edit-modal">
-    <label style="font-size: 0.7rem;">SELECT CATEGORY</label>
+    <label style="font-size:0.7rem; font-weight:bold;">RENAME / GROUP</label>
     <select id="preset-select" onchange="document.getElementById('edit-name-input').value=this.value">
-        <option value="">カスタム入力</option>
-        <option value="台本">台本</option>
-        <option value="仕込み図">仕込み図</option>
-        <option value="Cueリスト">Cueリスト</option>
-        <option value="機材リスト">機材リスト</option>
-        <option value="電源">電源</option>
-        <option value="タイムスケジュール">タイムスケジュール</option>
-        <option value="香盤表">香盤表</option>
-        <option value="舞台図面">舞台図面</option>
+        <option value="">CUSTOM...</option>
+        <option value="台本">台本</option><option value="仕込み図">仕込み図</option>
+        <option value="Cueリスト">Cueリスト</option><option value="機材リスト">機材リスト</option>
+        <option value="電源">電源</option><option value="タイムスケジュール">タイムスケジュール</option>
+        <option value="香盤表">香盤表</option><option value="舞台図面">舞台図面</option>
     </select>
     <input type="text" id="edit-name-input">
-    <button class="btn" onclick="saveNewName()">UPDATE NAME</button>
+    
+    <label style="font-size:0.7rem; font-weight:bold;">ASSIGN GROUP</label>
+    <select id="group-assign-select"></select>
+    
+    <button class="btn" onclick="saveEdit()">UPDATE</button>
 </div>
 
 <script>
+    let groups = [{ id: 'default', name: 'MAIN DOCUMENTS', collapsed: false }];
     let files = [];
     let currentEditIndex = null;
     let lockTimer;
 
     function updateClock() {
-        const now = new Date();
-        const timeStr = now.toTimeString().split(' ')[0];
+        const timeStr = new Date().toTimeString().split(' ')[0];
         document.getElementById('side-clock').textContent = timeStr;
         document.getElementById('lock-clock').textContent = timeStr;
     }
@@ -161,51 +164,103 @@
         document.getElementById('lock-perf-name').textContent = document.getElementById('perf-input').value || "NO TITLE";
     }
 
+    function addNewGroup() {
+        const name = prompt("グループ名を入力してください:", "NEW GROUP");
+        if (name) {
+            groups.push({ id: 'g' + Date.now(), name: name, collapsed: false });
+            renderAll();
+        }
+    }
+
     function handleFiles(selectedFiles) {
         for (let file of selectedFiles) {
-            files.push({ name: file.name, url: URL.createObjectURL(file) });
+            files.push({ 
+                id: 'f' + Math.random(),
+                name: file.name, 
+                url: URL.createObjectURL(file), 
+                groupId: 'default' 
+            });
         }
-        renderList();
-        if (files.length === selectedFiles.length) loadPDF(0);
+        renderAll();
+        if (files.length > 0 && !document.getElementById('pdf-viewer').src) loadPDF(files[0].url);
     }
 
-    function moveItem(index, direction) {
-        if (direction === -1 && index > 0) {
-            [files[index], files[index - 1]] = [files[index - 1], files[index]];
-        } else if (direction === 1 && index < files.length - 1) {
-            [files[index], files[index + 1]] = [files[index + 1], files[index]];
-        }
-        renderList();
+    function toggleGroup(groupId) {
+        const group = groups.find(g => g.id === groupId);
+        group.collapsed = !group.collapsed;
+        renderAll();
     }
 
-    function renderList() {
-        const list = document.getElementById('file-list');
-        list.innerHTML = '';
-        files.forEach((file, i) => {
-            const item = document.createElement('div');
-            item.className = 'file-item' + (document.getElementById('pdf-viewer').src.includes(file.url) ? ' active' : '');
-            item.innerHTML = `
-                <div class="file-name" onclick="loadPDF(${i})">${file.name}</div>
-                <div class="item-controls">
-                    <div class="mini-btn" onclick="moveItem(${i}, -1)">▲</div>
-                    <div class="mini-btn" onclick="moveItem(${i}, 1)">▼</div>
-                    <div class="mini-btn" onclick="openEditModal(${i})">EDIT</div>
+    function moveFile(index, dir) {
+        const targetFile = files[index];
+        const sameGroupFiles = files.filter(f => f.groupId === targetFile.groupId);
+        const idxInGroup = sameGroupFiles.indexOf(targetFile);
+        
+        if (dir === -1 && idxInGroup > 0) {
+            const globalPrevIdx = files.indexOf(sameGroupFiles[idxInGroup - 1]);
+            [files[index], files[globalPrevIdx]] = [files[globalPrevIdx], files[index]];
+        } else if (dir === 1 && idxInGroup < sameGroupFiles.length - 1) {
+            const globalNextIdx = files.indexOf(sameGroupFiles[idxInGroup + 1]);
+            [files[index], files[globalNextIdx]] = [files[globalNextIdx], files[index]];
+        }
+        renderAll();
+    }
+
+    function renderAll() {
+        const container = document.getElementById('list-container');
+        container.innerHTML = '';
+
+        groups.forEach(group => {
+            const gDiv = document.createElement('div');
+            gDiv.className = 'group-container';
+            gDiv.innerHTML = `
+                <div class="group-header" onclick="toggleGroup('${group.id}')">
+                    <span class="group-title">${group.collapsed ? '▶' : '▼'} ${group.name}</span>
                 </div>
+                <div class="file-list ${group.collapsed ? 'collapsed' : ''}" id="list-${group.id}"></div>
             `;
-            list.appendChild(item);
+            container.appendChild(gDiv);
+
+            const listDiv = gDiv.querySelector('.file-list');
+            files.forEach((file, index) => {
+                if (file.groupId === group.id) {
+                    const fDiv = document.createElement('div');
+                    const isActive = document.getElementById('pdf-viewer').src.includes(file.url);
+                    fDiv.className = 'file-item' + (isActive ? ' active' : '');
+                    fDiv.innerHTML = `
+                        <div class="file-name" onclick="loadPDF('${file.url}')">${file.name}</div>
+                        <div class="item-controls">
+                            <div class="mini-btn" onclick="moveFile(${index}, -1)">▲</div>
+                            <div class="mini-btn" onclick="moveFile(${index}, 1)">▼</div>
+                            <div class="mini-btn" onclick="openEdit(${index})">ID</div>
+                        </div>
+                    `;
+                    listDiv.appendChild(fDiv);
+                }
+            });
         });
     }
 
-    function loadPDF(index) {
-        if (files[index]) {
-            document.getElementById('pdf-viewer').src = files[index].url + "#toolbar=1";
-            renderList();
-        }
+    function loadPDF(url) {
+        document.getElementById('pdf-viewer').src = url + "#toolbar=1";
+        renderAll();
     }
 
-    function openEditModal(index) {
+    function openEdit(index) {
         currentEditIndex = index;
-        document.getElementById('edit-name-input').value = files[index].name;
+        const file = files[index];
+        document.getElementById('edit-name-input').value = file.name;
+        
+        const groupSelect = document.getElementById('group-assign-select');
+        groupSelect.innerHTML = '';
+        groups.forEach(g => {
+            const opt = document.createElement('option');
+            opt.value = g.id;
+            opt.textContent = g.name;
+            opt.selected = (g.id === file.groupId);
+            groupSelect.appendChild(opt);
+        });
+
         document.getElementById('modal-mask').style.display = 'block';
         document.getElementById('edit-modal').style.display = 'block';
     }
@@ -215,38 +270,29 @@
         document.getElementById('edit-modal').style.display = 'none';
     }
 
-    function saveNewName() {
-        const newName = document.getElementById('edit-name-input').value;
-        if (newName) {
-            files[currentEditIndex].name = newName;
-            renderList();
-            closeModal();
-        }
+    function saveEdit() {
+        const file = files[currentEditIndex];
+        file.name = document.getElementById('edit-name-input').value;
+        file.groupId = document.getElementById('group-assign-select').value;
+        renderAll();
+        closeModal();
     }
 
     function toggleLock(status) {
         const screen = document.getElementById('lock-screen');
-        if (status) {
-            screen.style.display = 'flex';
-            document.documentElement.requestFullscreen?.();
-        } else {
-            screen.style.display = 'none';
-        }
+        screen.style.display = status ? 'flex' : 'none';
+        if (status) document.documentElement.requestFullscreen?.().catch(()=>{});
     }
 
-    // 長押し解除
     const unlockBtn = document.getElementById('unlock-btn');
     const startUnlock = () => {
-        unlockBtn.style.color = "#fff";
-        unlockBtn.style.borderColor = "#fff";
+        unlockBtn.style.color = "#fff"; unlockBtn.style.borderColor = "#fff";
         lockTimer = setTimeout(() => toggleLock(false), 1200);
     };
     const cancelUnlock = () => {
         clearTimeout(lockTimer);
-        unlockBtn.style.color = "#444";
-        unlockBtn.style.borderColor = "#444";
+        unlockBtn.style.color = "#444"; unlockBtn.style.borderColor = "#444";
     };
-
     unlockBtn.addEventListener('mousedown', startUnlock);
     unlockBtn.addEventListener('mouseup', cancelUnlock);
     unlockBtn.addEventListener('touchstart', (e) => { e.preventDefault(); startUnlock(); });
