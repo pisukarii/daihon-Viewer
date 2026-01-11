@@ -3,93 +3,103 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Stage Script Viewer Pro</title>
+    <title>SCRIPT VIEWER -BLACK-</title>
     <style>
         :root {
-            --bg-color: #121212;
-            --panel-color: #252525;
-            --accent-color: #007bff;
-            --lock-color: #d32f2f;
-            --text-color: #e0e0e0;
+            --bg-color: #000000;
+            --panel-color: #111111;
+            --border-color: #333333;
+            --accent-color: #ffffff;
+            --text-color: #ffffff;
         }
 
         body, html {
             margin: 0; padding: 0; height: 100%; width: 100%;
-            font-family: 'Helvetica Neue', Arial, sans-serif;
+            font-family: 'Courier New', Consolas, monospace; /* 角ばったフォント */
             background: var(--bg-color); color: var(--text-color);
             overflow: hidden;
-        }
-
-        /* 時計（通常時・上部中央） */
-        #clock {
-            position: fixed; top: 0; left: 50%; transform: translateX(-50%);
-            background: rgba(0, 0, 0, 0.8); padding: 5px 25px;
-            border-bottom-left-radius: 15px; border-bottom-right-radius: 15px;
-            font-size: 1.2rem; z-index: 100; font-weight: bold;
         }
 
         .container { display: flex; height: 100vh; width: 100vw; }
 
         /* PDF表示エリア */
-        #viewer-area { flex-grow: 1; background: #333; position: relative; }
-        iframe { width: 100%; height: 100%; border: none; }
+        #viewer-area { flex-grow: 1; background: #000; position: relative; }
+        iframe { width: 100%; height: 100%; border: none; filter: invert(0); }
 
-        /* サイドパネル */
+        /* 右側サイドパネル */
         #sidebar {
-            width: 320px; background: var(--panel-color);
-            display: flex; flex-direction: column; border-left: 1px solid #444;
+            width: 350px; background: var(--panel-color);
+            display: flex; flex-direction: column; border-left: 1px solid var(--border-color);
         }
 
-        .config-area { padding: 15px; border-bottom: 1px solid #444; }
+        /* 右上時計 */
+        #side-clock {
+            padding: 15px; font-size: 2rem; font-weight: bold;
+            text-align: right; border-bottom: 2px solid var(--border-color);
+            background: #000; letter-spacing: 2px;
+        }
+
+        .config-area { padding: 15px; border-bottom: 1px solid var(--border-color); }
+        .config-area label { font-size: 0.7rem; color: #888; display: block; margin-bottom: 5px; }
         .config-area input {
-            width: 100%; background: #333; border: 1px solid #555; color: white;
-            padding: 8px; box-sizing: border-box; border-radius: 5px;
+            width: 100%; background: #000; border: 1px solid var(--border-color); color: white;
+            padding: 10px; box-sizing: border-box; border-radius: 0; /* 角を立たせる */
         }
 
+        /* ファイルリスト（スクロール可能） */
         #file-list { flex-grow: 1; overflow-y: auto; padding: 10px; }
         .file-item {
-            background: #333; margin-bottom: 8px; padding: 10px;
-            border-radius: 8px; display: flex; align-items: center; justify-content: space-between;
+            background: #000; margin-bottom: 2px; padding: 12px;
+            border: 1px solid var(--border-color);
+            display: flex; align-items: center; border-radius: 0;
         }
-        .file-item.active { border-left: 5px solid var(--accent-color); background: #3d3d3d; }
-        .file-name { flex-grow: 1; cursor: pointer; padding-right: 10px; overflow: hidden; text-overflow: ellipsis; }
-        .edit-btn { cursor: pointer; opacity: 0.6; font-size: 0.8rem; border: 1px solid #666; padding: 2px 5px; border-radius: 4px; }
+        .file-item.active { border: 1px solid var(--accent-color); background: #222; }
+        .file-name { flex-grow: 1; cursor: pointer; font-size: 0.9rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        
+        /* 並び替え・編集ボタン */
+        .item-controls { display: flex; gap: 5px; margin-left: 10px; }
+        .mini-btn { 
+            background: #000; border: 1px solid #444; color: #fff; 
+            padding: 5px; cursor: pointer; font-size: 0.7rem; min-width: 25px; text-align: center;
+        }
+        .mini-btn:active { background: #fff; color: #000; }
 
-        .controls { padding: 15px; background: #1a1a1a; }
+        /* 下部操作ボタン */
+        .controls { padding: 15px; background: #000; border-top: 1px solid var(--border-color); }
         .btn {
             display: block; width: 100%; padding: 15px; margin-bottom: 10px;
-            border: none; border-radius: 10px; cursor: pointer; font-size: 1rem; font-weight: bold;
+            border: 1px solid var(--accent-color); background: #000; color: #fff;
+            cursor: pointer; font-size: 0.9rem; font-weight: bold; border-radius: 0;
+            text-transform: uppercase;
         }
-        .btn-upload { background: var(--accent-color); color: white; }
-        .btn-lock { background: var(--lock-color); color: white; }
+        .btn:active { background: #fff; color: #000; }
+        .btn-lock { background: #300; border-color: #f00; color: #f66; }
 
-        /* ロック画面オーバーレイ */
+        /* ロック画面 */
         #lock-screen {
             display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: #000; z-index: 10000; flex-direction: column;
             justify-content: center; align-items: center; text-align: center;
         }
-        #lock-performance-name { font-size: 2rem; color: #aaa; margin-bottom: 20px; }
-        #lock-clock { font-size: 8rem; font-weight: bold; color: #fff; margin-bottom: 40px; }
-        #unlock-hint { color: #555; font-size: 1rem; }
+        #lock-perf-name { font-size: 1.5rem; color: #666; margin-bottom: 10px; border: 1px solid #333; padding: 10px 40px; }
+        #lock-clock { font-size: 10rem; font-weight: bold; color: #fff; margin-bottom: 30px; }
+        #unlock-btn { width: 300px; padding: 20px; border: 1px solid #444; background: #000; color: #444; cursor: pointer; }
 
         /* モーダル */
         .modal {
             display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            background: #333; padding: 25px; border-radius: 15px; z-index: 1001; width: 300px;
+            background: #000; padding: 30px; border: 2px solid var(--accent-color); z-index: 1001; width: 320px;
         }
-        .modal-mask { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 1000; }
+        .modal-mask { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 1000; }
+        select, .modal input { width: 100%; padding: 12px; margin-bottom: 15px; background: #000; border: 1px solid var(--border-color); color: #fff; border-radius: 0; }
     </style>
 </head>
 <body>
 
-<div id="clock">00:00:00</div>
-
-<div id="lock-screen" oncontextmenu="return false;">
-    <div id="lock-performance-name">公演名未設定</div>
+<div id="lock-screen">
+    <div id="lock-perf-name">NO TITLE</div>
     <div id="lock-clock">00:00:00</div>
-    <button class="btn" style="width:200px; background:#222; color:#666;" id="unlock-trigger">長押しで解除</button>
-    <div id="unlock-hint">Hold to Unlock</div>
+    <div id="unlock-btn">HOLD TO UNLOCK</div>
 </div>
 
 <div class="container">
@@ -98,36 +108,39 @@
     </div>
 
     <div id="sidebar">
+        <div id="side-clock">00:00:00</div>
+        
         <div class="config-area">
-            <label style="font-size:0.8rem; color:#888;">公演名/現場名</label>
-            <input type="text" id="performance-input" placeholder="例：冬の演劇祭2024" oninput="updatePerfName()">
+            <label>PERFORMANCE NAME</label>
+            <input type="text" id="perf-input" placeholder="未設定" oninput="updatePerfName()">
         </div>
         
-        <div id="file-list">
-            <p style="text-align:center; color:#666; margin-top:20px;">PDFをアップロードしてください</p>
-        </div>
+        <div id="file-list"></div>
         
         <div class="controls">
             <input type="file" id="file-input" accept="application/pdf" multiple style="display:none;" onchange="handleFiles(this.files)">
-            <button class="btn btn-upload" onclick="document.getElementById('file-input').click()">＋ PDF一括追加</button>
-            <button class="btn btn-lock" onclick="toggleLock(true)">🔒 画面ロック (本番モード)</button>
+            <button class="btn" onclick="document.getElementById('file-input').click()">+ ADD PDF FILES</button>
+            <button class="btn btn-lock" onclick="toggleLock(true)">LOCK SYSTEM</button>
         </div>
     </div>
 </div>
 
 <div class="modal-mask" id="modal-mask" onclick="closeModal()"></div>
 <div class="modal" id="edit-modal">
-    <h3 style="margin-top:0;">表示名の変更</h3>
-    <select id="preset-select" onchange="document.getElementById('edit-name-input').value=this.value" style="width:100%; padding:8px; margin-bottom:10px;">
+    <label style="font-size: 0.7rem;">SELECT CATEGORY</label>
+    <select id="preset-select" onchange="document.getElementById('edit-name-input').value=this.value">
         <option value="">カスタム入力</option>
         <option value="台本">台本</option>
-        <option value="進行表">進行表</option>
+        <option value="仕込み図">仕込み図</option>
+        <option value="Cueリスト">Cueリスト</option>
+        <option value="機材リスト">機材リスト</option>
+        <option value="電源">電源</option>
+        <option value="タイムスケジュール">タイムスケジュール</option>
         <option value="香盤表">香盤表</option>
-        <option value="音響リスト">音響リスト</option>
-        <option value="照明プロット">照明プロット</option>
+        <option value="舞台図面">舞台図面</option>
     </select>
-    <input type="text" id="edit-name-input" style="width:100%; padding:8px; box-sizing:border-box;">
-    <button class="btn btn-upload" style="margin-top:15px;" onclick="saveNewName()">保存</button>
+    <input type="text" id="edit-name-input">
+    <button class="btn" onclick="saveNewName()">UPDATE NAME</button>
 </div>
 
 <script>
@@ -135,29 +148,34 @@
     let currentEditIndex = null;
     let lockTimer;
 
-    // 時計更新
     function updateClock() {
         const now = new Date();
-        const timeStr = now.getHours().toString().padStart(2, '0') + ':' +
-                        now.getMinutes().toString().padStart(2, '0') + ':' +
-                        now.getSeconds().toString().padStart(2, '0');
-        document.getElementById('clock').textContent = timeStr;
+        const timeStr = now.toTimeString().split(' ')[0];
+        document.getElementById('side-clock').textContent = timeStr;
         document.getElementById('lock-clock').textContent = timeStr;
     }
     setInterval(updateClock, 1000);
+    updateClock();
 
     function updatePerfName() {
-        document.getElementById('lock-performance-name').textContent = document.getElementById('performance-input').value || "公演名未設定";
+        document.getElementById('lock-perf-name').textContent = document.getElementById('perf-input').value || "NO TITLE";
     }
 
-    // ファイル処理
     function handleFiles(selectedFiles) {
         for (let file of selectedFiles) {
-            const fileURL = URL.createObjectURL(file);
-            files.push({ name: file.name, url: fileURL });
+            files.push({ name: file.name, url: URL.createObjectURL(file) });
         }
         renderList();
-        if (files.length === selectedFiles.length) loadPDF(0); // 初回読み込み
+        if (files.length === selectedFiles.length) loadPDF(0);
+    }
+
+    function moveItem(index, direction) {
+        if (direction === -1 && index > 0) {
+            [files[index], files[index - 1]] = [files[index - 1], files[index]];
+        } else if (direction === 1 && index < files.length - 1) {
+            [files[index], files[index + 1]] = [files[index + 1], files[index]];
+        }
+        renderList();
     }
 
     function renderList() {
@@ -168,19 +186,23 @@
             item.className = 'file-item' + (document.getElementById('pdf-viewer').src.includes(file.url) ? ' active' : '');
             item.innerHTML = `
                 <div class="file-name" onclick="loadPDF(${i})">${file.name}</div>
-                <div class="edit-btn" onclick="openEditModal(${i})">編集</div>
+                <div class="item-controls">
+                    <div class="mini-btn" onclick="moveItem(${i}, -1)">▲</div>
+                    <div class="mini-btn" onclick="moveItem(${i}, 1)">▼</div>
+                    <div class="mini-btn" onclick="openEditModal(${i})">EDIT</div>
+                </div>
             `;
             list.appendChild(item);
         });
     }
 
     function loadPDF(index) {
-        const viewer = document.getElementById('pdf-viewer');
-        viewer.src = files[index].url + "#toolbar=1";
-        renderList();
+        if (files[index]) {
+            document.getElementById('pdf-viewer').src = files[index].url + "#toolbar=1";
+            renderList();
+        }
     }
 
-    // 名前編集
     function openEditModal(index) {
         currentEditIndex = index;
         document.getElementById('edit-name-input').value = files[index].name;
@@ -202,38 +224,33 @@
         }
     }
 
-    // ロック機能
     function toggleLock(status) {
         const screen = document.getElementById('lock-screen');
         if (status) {
             screen.style.display = 'flex';
-            if (document.documentElement.requestFullscreen) {
-                document.documentElement.requestFullscreen().catch(() => {});
-            }
+            document.documentElement.requestFullscreen?.();
         } else {
             screen.style.display = 'none';
         }
     }
 
-    // 長押し解除処理
-    const unlockTrigger = document.getElementById('unlock-trigger');
+    // 長押し解除
+    const unlockBtn = document.getElementById('unlock-btn');
     const startUnlock = () => {
-        unlockTrigger.style.background = "#555";
-        lockTimer = setTimeout(() => {
-            toggleLock(false);
-            unlockTrigger.style.background = "#222";
-        }, 1200);
+        unlockBtn.style.color = "#fff";
+        unlockBtn.style.borderColor = "#fff";
+        lockTimer = setTimeout(() => toggleLock(false), 1200);
     };
     const cancelUnlock = () => {
         clearTimeout(lockTimer);
-        unlockTrigger.style.background = "#222";
+        unlockBtn.style.color = "#444";
+        unlockBtn.style.borderColor = "#444";
     };
 
-    unlockTrigger.addEventListener('mousedown', startUnlock);
-    unlockTrigger.addEventListener('mouseup', cancelUnlock);
-    unlockTrigger.addEventListener('touchstart', (e) => { e.preventDefault(); startUnlock(); });
-    unlockTrigger.addEventListener('touchend', cancelUnlock);
-
+    unlockBtn.addEventListener('mousedown', startUnlock);
+    unlockBtn.addEventListener('mouseup', cancelUnlock);
+    unlockBtn.addEventListener('touchstart', (e) => { e.preventDefault(); startUnlock(); });
+    unlockBtn.addEventListener('touchend', cancelUnlock);
 </script>
 </body>
 </html>
